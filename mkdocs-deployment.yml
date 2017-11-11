@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"                                                                                                                                                           
+Description: Deploymnet stack for MkDocs to be published on AWS S3
+ 
+#----------------------------------------------------------------------------------------
+#--[ PARAMETRES ]------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+Parameters:
+  CodeBuildServiceRoleArn:
+    Desription: CodeBuild IAM Service Role ARN
+    Type: String
+
+  CodePipelineServiceRoleArn:
+    Description: CodePipeline IAM Service Role ARN 
+    Type: String
+
+  ProjectName:
+    Description: Project name for this deployment
+    Default: mkdocs
+    Type: String
+ 
+  ArtifactStorePipeline:
+    Description: Artifact store for CodePipeline to store artifact outputs
+    Default: ricebowljr-codepipeline-artefacts
+    Type: String
+ 
+  Prefix:
+    Description: Prefix
+    Default: ricebowljr
+    Type: String
+
+  WebsiteBucket:
+    Description: Bucket where the website should be synchronized
+    Type: String
+
+  GitHubUser:
+    Description: GitHub user
+    Type: String
+ 
+  GitHubRepo:
+    Description: GitHub repository
+    Type: String
+ 
+  GitHubBranch:
+    Description: Gith branch for 
+    Type: String
+ 
+  GitHubToken:
+    Description: GitHub personal token
+    Type: String
+
+ 
+#----------------------------------------------------------------------------------------
+#--[ RESOURCES ]-------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+ 
+Resources:
+#--[ CodeBuild ]-------------------------------------------------------------------------
+  CodeBuild:
+    Type: "AWS::CodeBuild::Project"
+    Properties:
+      Name: !Sub ${Prefix}-${ProjectName}
+      RoleArn: !Ref CodeBuildServiceRoleArn
+      Artifacts:
+        Type:  NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:2.7.12
+        EnvironmentVariables:
+        - Name: BUCKET
+          Value: !Ref WebsiteBucket
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 5
+      Tags:
+        - Key: Key1
+          Value: Value1
+ 
+#--[ CodePipeline ]----------------------------------------------------------------------
+  CodePipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Sub ${Prefix}-${Env}-${ServiceName}
+      RoleArn: !Ref CodePipelineServiceRoleArn
+      ArtifactStore:
+        Type: S3      
+        Location: !Ref ArtifactStorePipeline
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: source
+              RunOrder: 1
+        - Name: "Build"
+          Actions:
+            - Name: !Sub build-${Prefix}-${Env}-${ServiceName}
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuild
+              InputArtifacts:
+                - Name: backend
+              RunOrder: 1                                                                                                                                                                        
+

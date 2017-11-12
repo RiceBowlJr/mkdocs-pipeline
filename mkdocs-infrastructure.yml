@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Infrastructure stack for MkDocs wiki to be published on S3 / CloudFront
+
+#-------------------------------------------------------------------------------
+#--[ PARAMETRES ]---------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+Parameters:
+  WebsiteBucket:
+    Description: Bucket where the website should be synchronized
+    Type: String
+
+#-------------------------------------------------------------------------------
+#--[ RESOURCES ]----------------------------------------------------------------
+#-------------------------------------------------------------------------------
+ 
+Resources:
+#--[ S3 Bucket ]----------------------------------------------------------------
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      AccessControl: PublicRead
+      BucketName: !Ref WebsiteBucket
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+    DeletionPolicy: Retain
+
+
+#-------------------------------------------------------------------------------
+#--[ OUTPUTS ]----------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt [S3Bucket, WebsiteURL]
+    Description: URL for website hosted on S3
+  S3BucketSecureURL:
+    Value: !Join ['', ['https://', !GetAtt [S3Bucket, DomainName]]]
+    Description: Name of S3 bucket to hold website content

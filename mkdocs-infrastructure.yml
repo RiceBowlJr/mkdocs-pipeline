@@ -11,6 +11,11 @@ Parameters:
     Description: Bucket where the website should be synchronized
     Type: String
 
+  HostedDNSZone:
+    Description: DNS zone for the website to be pointed to
+    Default: ricebowljr.cc.
+    Type: String
+
 #-------------------------------------------------------------------------------
 #--[ RESOURCES ]----------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -27,6 +32,18 @@ Resources:
         ErrorDocument: error.html
     DeletionPolicy: Retain
 
+#--[ Route 53 RR ]--------------------------------------------------------------
+  Route53RecordSet:
+    Type: "AWS::Route53::RecordSet"
+    Properties:
+      HostedZoneName: !Ref HostedDNSZone
+      Name: !Sub "wiki.${HostedDNSZone}"
+      Type: A
+      AliasTarget:
+        #DNSName: !Ref CloudFrontDistribution
+        DNSName: d2egakoj9uwo72.cloudfront.net
+        HostedZoneId: Z2FDTNDATAQYW2
+      
 
 #-------------------------------------------------------------------------------
 #--[ OUTPUTS ]----------------------------------------------------------------
